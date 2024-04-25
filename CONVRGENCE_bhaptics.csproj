@@ -41,4 +41,8 @@
     </Reference>
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="XCOPY &quot;$(SolutionDir)\bhaptics_library.dll&quot; &quot;F:\SteamLibrary\steamapps\common\CONVRGENCE\Mods\&quot; /Y&#xD;&#xA;XCOPY &quot;$(TargetDir)*.dll&quot; &quot;F:\SteamLibrary\steamapps\common\CONVRGENCE\Mods\&quot; /Y" />
+  </Target>
+
 </Project>
