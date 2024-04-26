@@ -7,8 +7,9 @@ using Il2CppEmeraldAI;
 using UnityEngine;
 using Il2CppKnife.RealBlood.SimpleController;
 using Il2Cpp;
+using Il2CppFIMSpace.BonesStimulation;
 
-[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.0", "Florian Fahrenberger")]
+[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.1", "Florian Fahrenberger")]
 [assembly: MelonGame("Monkey-With-a-Bomb", "CONVRGENCE")]
 
 
@@ -34,10 +35,12 @@ namespace CONVRGENCE_bhaptics
                 if (!__instance.readyToShoot) return;
                 if (!__instance.BulletInChamber) return;
                 bool isRight = (__instance.thisGrabber.HandSide == ControllerHand.Right);
-                tactsuitVr.GunRecoil(isRight);
+                bool twoHanded = (__instance.IsSniper);
+                tactsuitVr.GunRecoil(isRight, 1f, twoHanded);
             }
         }
 
+        
         [HarmonyPatch(typeof(PlayerBase), "DamageTake", new Type[] { typeof(int) })]
         public class bhaptics_TakeDamage
         {
@@ -47,6 +50,7 @@ namespace CONVRGENCE_bhaptics
                 tactsuitVr.PlaybackHaptics("Impact");
             }
         }
+        
 
         [HarmonyPatch(typeof(PlayerBase), "Healing", new Type[] { })]
         public class bhaptics_Healing
@@ -89,34 +93,84 @@ namespace CONVRGENCE_bhaptics
         }
 
 
-        private static (float, float) getAngleAndShift(Transform player, Vector3 hit)
+        private static KeyValuePair<float, float> getAngleAndShift(Vector3 playerPosition, Vector3 hit, Quaternion playerRotation)
         {
-            Vector3 patternOrigin = new Vector3(0f, 0f, 1f);
+            // bhaptics pattern starts in the front, then rotates to the left. 0° is front, 90° is left, 270° is right.
             // y is "up", z is "forward" in local coordinates
-            Vector3 hitPosition = hit - player.position;
-            Quaternion PlayerRotation = player.rotation;
-            Vector3 playerDir = PlayerRotation.eulerAngles;
-            // We only want rotation correction in y direction (left-right), top-bottom and yaw we can leave
+            Vector3 patternOrigin = new Vector3(0f, 0f, 1f);
+            Vector3 hitPosition = hit - playerPosition;
+            Quaternion myPlayerRotation = playerRotation;
+            Vector3 playerDir = myPlayerRotation.eulerAngles;
+            // get rid of the up/down component to analyze xz-rotation
             Vector3 flattenedHit = new Vector3(hitPosition.x, 0f, hitPosition.z);
-            float earlyhitAngle = Vector3.Angle(flattenedHit, patternOrigin);
-            Vector3 earlycrossProduct = Vector3.Cross(flattenedHit, patternOrigin);
-            if (earlycrossProduct.y > 0f) { earlyhitAngle *= -1f; }
-            float myRotation = earlyhitAngle - playerDir.y;
+
+            // get angle. .Net < 4.0 does not have a "SignedAngle" function...
+            float hitAngle = Vector3.Angle(flattenedHit, patternOrigin);
+            // check if cross product points up or down, to make signed angle myself
+            Vector3 crossProduct = Vector3.Cross(flattenedHit, patternOrigin);
+            if (crossProduct.y > 0f) { hitAngle *= -1f; }
+            // relative to player direction
+            float myRotation = hitAngle - playerDir.y;
+            // switch directions (bhaptics angles are in mathematically negative direction)
             myRotation *= -1f;
+            // convert signed angle into [0, 360] rotation
             if (myRotation < 0f) { myRotation = 360f + myRotation; }
 
+
+            // up/down shift is in y-direction
+            // in Shadow Legend, the torso Transform has y=0 at the neck,
+            // and the torso ends at roughly -0.5 (that's in meters)
+            // so cap the shift to [-0.5, 0]...
             float hitShift = hitPosition.y;
-            tactsuitVr.LOG("hitShift: " + hitShift.ToString());
-            float upperBound = 0.0f;
+            //tactsuitVr.LOG("HitShift: " + hitShift);
+            float upperBound = 0.5f;
             float lowerBound = -0.5f;
             if (hitShift > upperBound) { hitShift = 0.5f; }
             else if (hitShift < lowerBound) { hitShift = -0.5f; }
             // ...and then spread/shift it to [-0.5, 0.5]
             else { hitShift = (hitShift - lowerBound) / (upperBound - lowerBound) - 0.5f; }
 
-            return (myRotation, hitShift);
+            //tactsuitVr.LOG("Relative x-z-position: " + relativeHitDir.x.ToString() + " "  + relativeHitDir.z.ToString());
+            //tactsuitVr.LOG("HitAngle: " + hitAngle.ToString());
+            //tactsuitVr.LOG("HitShift: " + hitShift.ToString());
+
+            // No tuple returns available in .NET < 4.0, so this is the easiest quickfix
+            return new KeyValuePair<float, float>(myRotation, hitShift);
         }
 
+
+        [HarmonyPatch(typeof(PlayerBase), "takeDamage")]
+        public class bhaptics_Damage1
+        {
+            [HarmonyPostfix]
+            public static void Postfix(PlayerBase __instance)
+            {
+                Vector3 hitPosition = __instance.MyBloodPointTransform.position;
+                Vector3 playerPosition = __instance.Player.transform.position;
+                Quaternion playerRotation = __instance.Player.transform.rotation;
+                var angleShift = getAngleAndShift(playerPosition, hitPosition, playerRotation);
+                tactsuitVr.PlayBackHit("attackedshotgun_body", angleShift.Key, angleShift.Value);
+
+                tactsuitVr.PlaybackHaptics("attackedrifle_head");
+            }
+        }
+
+
+        [HarmonyPatch(typeof(PlayerBase), "takeDamage2")]
+        public class bhaptics_Damage2
+        {
+            [HarmonyPostfix]
+            public static void Postfix(PlayerBase __instance)
+            {
+                Vector3 hitPosition = __instance.MyBloodPointTransform.position;
+                Vector3 playerPosition = __instance.Player.transform.position;
+                Quaternion playerRotation = __instance.Player.transform.rotation;
+                var angleShift = getAngleAndShift(playerPosition, hitPosition, playerRotation);
+                tactsuitVr.PlayBackHit("attackedshotgun_body", angleShift.Key, angleShift.Value);
+
+                tactsuitVr.PlaybackHaptics("attackedrifle_head");
+            }
+        }
 
         [HarmonyPatch(typeof(BackpackAutoSorting), "SnapLoot", new Type[] { })]
         public class bhaptics_SnapLoot
@@ -145,22 +199,22 @@ namespace CONVRGENCE_bhaptics
                 switch (__instance.name)
                 {
                     case "KnifeHolster":
-                        pattern = "HolsterChest" + leftSuffix;
+                        pattern = "HolsterHip" + leftSuffix;
                         break;
-                    case "PistolHolster":
+                    case "RevolverHolster":
                         pattern = "HolsterHip" + rightSuffix;
                         break;
-                    case "LighterHolster":
+                    case "BookHolster":
                         pattern = "HolsterChest" + rightSuffix;
+                        break;
+                    case "FlashlightHolster":
+                        pattern = "HolsterChest" + leftSuffix;
                         break;
                     case "BackpackHolster":
                         pattern = "ReceiveShoulder" + leftSuffix;
                         break;
                     case "AkHolster":
                         pattern = "ReceiveShoulder" + rightSuffix;
-                        break;
-                    case "GasMaskHolster":
-                        pattern = "HolsterHip" + leftSuffix;
                         break;
                     default:
                         pattern = "";
@@ -170,6 +224,17 @@ namespace CONVRGENCE_bhaptics
                 tactsuitVr.PlaybackHaptics(pattern);
             }
         }
+
+        [HarmonyPatch(typeof(BonesStimulator), "Vibrate_ExplosionShake", new Type[] { typeof(float) })]
+        public class bhaptics_Explosion
+        {
+            [HarmonyPostfix]
+            public static void Postfix(BonesStimulator __instance)
+            {
+                tactsuitVr.PlaybackHaptics("Explosion");
+            }
+        }
+
 
         [HarmonyPatch(typeof(SnapZone), "GrabGrabbable", new Type[] { typeof(Grabbable) })]
         public class bhaptics_GrabGrabbable
@@ -185,22 +250,22 @@ namespace CONVRGENCE_bhaptics
                 switch (__instance.name)
                 {
                     case "KnifeHolster":
-                        pattern = "HolsterChest" + leftSuffix;
+                        pattern = "HolsterHip" + leftSuffix;
                         break;
-                    case "PistolHolster":
+                    case "RevolverHolster":
                         pattern = "HolsterHip" + rightSuffix;
                         break;
-                    case "LighterHolster":
+                    case "BookHolster":
                         pattern = "HolsterChest" + rightSuffix;
                         break;
+                    case "FlashlightHolster":
+                        pattern = "HolsterChest" + leftSuffix;
+                        break;
                     case "BackpackHolster":
-                        pattern = "StoreShoulder" + leftSuffix;
+                        pattern = "ReceiveShoulder" + leftSuffix;
                         break;
                     case "AkHolster":
-                        pattern = "StoreShoulder" + rightSuffix;
-                        break;
-                    case "GasMaskHolster":
-                        pattern = "HolsterHip" + leftSuffix;
+                        pattern = "ReceiveShoulder" + rightSuffix;
                         break;
                     default:
                         pattern = "";
@@ -208,6 +273,25 @@ namespace CONVRGENCE_bhaptics
                 }
                 if (pattern == "") return;
                 tactsuitVr.PlaybackHaptics(pattern);
+            }
+        }
+
+        [HarmonyPatch(typeof(Mouth), "StartWhistle")]
+        public class bhaptics_Whistle
+        {
+            [HarmonyPostfix]
+            public static void Postfix(Mouth __instance)
+            {
+                tactsuitVr.PlaybackHaptics("WhistleShort");
+            }
+        }
+        [HarmonyPatch(typeof(Mouth), "StartLongWhistle")]
+        public class bhaptics_Whistle2
+        {
+            [HarmonyPostfix]
+            public static void Postfix(Mouth __instance)
+            {
+                tactsuitVr.PlaybackHaptics("WhistleLong");
             }
         }
 
