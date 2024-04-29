@@ -9,7 +9,7 @@ using Il2CppKnife.RealBlood.SimpleController;
 using Il2Cpp;
 using Il2CppFIMSpace.BonesStimulation;
 
-[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.1", "Florian Fahrenberger")]
+[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.2", "Florian Fahrenberger")]
 [assembly: MelonGame("Monkey-With-a-Bomb", "CONVRGENCE")]
 
 
@@ -149,9 +149,7 @@ namespace CONVRGENCE_bhaptics
                 Vector3 playerPosition = __instance.Player.transform.position;
                 Quaternion playerRotation = __instance.Player.transform.rotation;
                 var angleShift = getAngleAndShift(playerPosition, hitPosition, playerRotation);
-                tactsuitVr.PlayBackHit("attackedshotgun_body", angleShift.Key, angleShift.Value);
-
-                tactsuitVr.PlaybackHaptics("attackedrifle_head");
+                tactsuitVr.PlayBackHit("Impact", angleShift.Key, angleShift.Value);
             }
         }
 
@@ -166,9 +164,7 @@ namespace CONVRGENCE_bhaptics
                 Vector3 playerPosition = __instance.Player.transform.position;
                 Quaternion playerRotation = __instance.Player.transform.rotation;
                 var angleShift = getAngleAndShift(playerPosition, hitPosition, playerRotation);
-                tactsuitVr.PlayBackHit("attackedshotgun_body", angleShift.Key, angleShift.Value);
-
-                tactsuitVr.PlaybackHaptics("attackedrifle_head");
+                tactsuitVr.PlayBackHit("Impact", angleShift.Key, angleShift.Value);
             }
         }
 
