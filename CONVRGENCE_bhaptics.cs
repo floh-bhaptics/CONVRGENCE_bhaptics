@@ -35,7 +35,7 @@ namespace CONVRGENCE_bhaptics
                 if (!__instance.readyToShoot) return;
                 if (!__instance.BulletInChamber) return;
                 bool isRight = (__instance.thisGrabber.HandSide == ControllerHand.Right);
-                bool twoHanded = (__instance.IsSniper);
+                bool twoHanded = ((__instance.IsSniper)|(__instance.PistolSecondHand));
                 tactsuitVr.GunRecoil(isRight, 1f, twoHanded);
             }
         }
