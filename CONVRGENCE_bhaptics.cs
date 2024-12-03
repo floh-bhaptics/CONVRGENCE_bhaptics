@@ -9,7 +9,7 @@ using Il2CppKnife.RealBlood.SimpleController;
 using Il2Cpp;
 using Il2CppFIMSpace.BonesStimulation;
 
-[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.2", "Florian Fahrenberger")]
+[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.3", "Florian Fahrenberger")]
 [assembly: MelonGame("Monkey-With-a-Bomb", "CONVRGENCE")]
 
 
