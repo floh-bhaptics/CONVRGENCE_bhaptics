@@ -9,7 +9,7 @@ using Il2CppKnife.RealBlood.SimpleController;
 using Il2Cpp;
 using Il2CppFIMSpace.BonesStimulation;
 
-[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.3", "Florian Fahrenberger")]
+[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.4", "Florian Fahrenberger")]
 [assembly: MelonGame("Monkey-With-a-Bomb", "CONVRGENCE")]
 
 
@@ -32,6 +32,7 @@ namespace CONVRGENCE_bhaptics
             [HarmonyPostfix]
             public static void Postfix(RaycastWeapon __instance)
             {
+                //tactsuitVr.LOG("Shoot: " + __instance.name + " " + __instance.BulletInChamber.ToString() + " " + __instance.readyToShoot.ToString());
                 if (!__instance.readyToShoot) return;
                 if (!__instance.BulletInChamber) return;
                 bool isRight = (__instance.thisGrabber.HandSide == ControllerHand.Right);
@@ -71,6 +72,56 @@ namespace CONVRGENCE_bhaptics
             public static void Postfix()
             {
                 tactsuitVr.PlaybackHaptics("Healing");
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerBase), "HealBleeding", new Type[] { })]
+        public class bhaptics_HealBleeding
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                tactsuitVr.PlaybackHaptics("Healing");
+            }
+        }
+
+        [HarmonyPatch(typeof(Bandage), "StartBandageProcess", new Type[] { })]
+        public class bhaptics_Bandaging
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                tactsuitVr.PlaybackHaptics("Healing");
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerBase), "Drink", new Type[] { typeof(float) })]
+        public class bhaptics_Drinking
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                tactsuitVr.PlaybackHaptics("Drinking");
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerBase), "Eat", new Type[] { typeof(float) })]
+        public class bhaptics_Eating
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                tactsuitVr.PlaybackHaptics("Eating");
+            }
+        }
+
+        [HarmonyPatch(typeof(Mouth), "PlaySmokingLoop", new Type[] {  })]
+        public class bhaptics_Smoking
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                tactsuitVr.PlaybackHaptics("Smoking");
             }
         }
 
@@ -147,7 +198,7 @@ namespace CONVRGENCE_bhaptics
             [HarmonyPostfix]
             public static void Postfix(PlayerBase __instance)
             {
-                Vector3 hitPosition = __instance.MyBloodPointTransform.position;
+                Vector3 hitPosition = __instance.MobileBlood.transform.position;
                 Vector3 playerPosition = __instance.Player.transform.position;
                 Quaternion playerRotation = __instance.Player.transform.rotation;
                 var angleShift = getAngleAndShift(playerPosition, hitPosition, playerRotation);
@@ -162,7 +213,7 @@ namespace CONVRGENCE_bhaptics
             [HarmonyPostfix]
             public static void Postfix(PlayerBase __instance)
             {
-                Vector3 hitPosition = __instance.MyBloodPointTransform.position;
+                Vector3 hitPosition = __instance.MobileBlood.transform.position;
                 Vector3 playerPosition = __instance.Player.transform.position;
                 Quaternion playerRotation = __instance.Player.transform.rotation;
                 var angleShift = getAngleAndShift(playerPosition, hitPosition, playerRotation);
@@ -202,16 +253,25 @@ namespace CONVRGENCE_bhaptics
                     case "RevolverHolster":
                         pattern = "HolsterHip" + rightSuffix;
                         break;
+                    case "PistolHolster":
+                        pattern = "HolsterHip" + rightSuffix;
+                        break;
+                    case "LightWeaponHolster":
+                        pattern = "HolsterHip" + rightSuffix;
+                        break;
                     case "BookHolster":
                         pattern = "HolsterChest" + rightSuffix;
                         break;
                     case "FlashlightHolster":
                         pattern = "HolsterChest" + leftSuffix;
                         break;
+                    case "ArtContainerHolster":
+                        pattern = "HolsterBack";
+                        break;
                     case "BackpackHolster":
                         pattern = "ReceiveShoulder" + leftSuffix;
                         break;
-                    case "AkHolster":
+                    case "HeavyWeaponHolster":
                         pattern = "ReceiveShoulder" + rightSuffix;
                         break;
                     default:
@@ -259,10 +319,13 @@ namespace CONVRGENCE_bhaptics
                     case "FlashlightHolster":
                         pattern = "HolsterChest" + leftSuffix;
                         break;
+                    case "ArtContainerHolster":
+                        pattern = "HolsterBack";
+                        break;
                     case "BackpackHolster":
                         pattern = "ReceiveShoulder" + leftSuffix;
                         break;
-                    case "AkHolster":
+                    case "HeavyWeaponHolster":
                         pattern = "ReceiveShoulder" + rightSuffix;
                         break;
                     default:
