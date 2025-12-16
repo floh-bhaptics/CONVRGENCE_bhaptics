@@ -9,7 +9,7 @@ using Il2CppKnife.RealBlood.SimpleController;
 using Il2Cpp;
 using Il2CppFIMSpace.BonesStimulation;
 
-[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.4", "Florian Fahrenberger")]
+[assembly: MelonInfo(typeof(CONVRGENCE_bhaptics.CONVRGENCE_bhaptics), "CONVRGENCE_bhaptics", "1.0.5", "Florian Fahrenberger")]
 [assembly: MelonGame("Monkey-With-a-Bomb", "CONVRGENCE")]
 
 
@@ -33,8 +33,11 @@ namespace CONVRGENCE_bhaptics
             public static void Postfix(RaycastWeapon __instance)
             {
                 //tactsuitVr.LOG("Shoot: " + __instance.name + " " + __instance.BulletInChamber.ToString() + " " + __instance.readyToShoot.ToString());
-                if (!__instance.readyToShoot) return;
-                if (!__instance.BulletInChamber) return;
+                if (!__instance.IsMosin)
+                {
+                    if (!__instance.readyToShoot) return;
+                    if (!__instance.BulletInChamber) return;
+                }
                 bool isRight = (__instance.thisGrabber.HandSide == ControllerHand.Right);
                 bool twoHanded = ((__instance.IsSniper)|(__instance.PistolSecondHand));
                 if (__instance.SecondHandGrabbable != null)
@@ -250,28 +253,58 @@ namespace CONVRGENCE_bhaptics
                     case "KnifeHolster":
                         pattern = "HolsterHip" + leftSuffix;
                         break;
+                    case "FlashlightHolster":
+                        pattern = "HolsterChest" + leftSuffix;
+                        break;
+                    case "BookHolster":
+                        pattern = "HolsterChest" + rightSuffix;
+                        break;
+                    case "ArtContainerHolster":
+                        pattern = "HolsterBack";
+                        break;
                     case "RevolverHolster":
                         pattern = "HolsterHip" + rightSuffix;
                         break;
                     case "PistolHolster":
                         pattern = "HolsterHip" + rightSuffix;
                         break;
-                    case "LightWeaponHolster":
+                    case "KEDRHolster":
                         pattern = "HolsterHip" + rightSuffix;
                         break;
-                    case "BookHolster":
-                        pattern = "HolsterChest" + rightSuffix;
+                    case "StechkinHolster":
+                        pattern = "HolsterHip" + rightSuffix;
                         break;
-                    case "FlashlightHolster":
-                        pattern = "HolsterChest" + leftSuffix;
-                        break;
-                    case "ArtContainerHolster":
-                        pattern = "HolsterBack";
+                    case "TokarevHolster":
+                        pattern = "HolsterHip" + rightSuffix;
                         break;
                     case "BackpackHolster":
                         pattern = "ReceiveShoulder" + leftSuffix;
                         break;
                     case "HeavyWeaponHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "SaigaHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "SVDHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "PPSHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "CrossbowHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "ObrezHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "MosinHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "FlamethrowerHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "EnergyRifleHolster":
                         pattern = "ReceiveShoulder" + rightSuffix;
                         break;
                     default:
@@ -310,22 +343,58 @@ namespace CONVRGENCE_bhaptics
                     case "KnifeHolster":
                         pattern = "HolsterHip" + leftSuffix;
                         break;
-                    case "RevolverHolster":
-                        pattern = "HolsterHip" + rightSuffix;
+                    case "FlashlightHolster":
+                        pattern = "HolsterChest" + leftSuffix;
                         break;
                     case "BookHolster":
                         pattern = "HolsterChest" + rightSuffix;
                         break;
-                    case "FlashlightHolster":
-                        pattern = "HolsterChest" + leftSuffix;
-                        break;
                     case "ArtContainerHolster":
                         pattern = "HolsterBack";
+                        break;
+                    case "RevolverHolster":
+                        pattern = "HolsterHip" + rightSuffix;
+                        break;
+                    case "PistolHolster":
+                        pattern = "HolsterHip" + rightSuffix;
+                        break;
+                    case "KEDRHolster":
+                        pattern = "HolsterHip" + rightSuffix;
+                        break;
+                    case "StechkinHolster":
+                        pattern = "HolsterHip" + rightSuffix;
+                        break;
+                    case "TokarevHolster":
+                        pattern = "HolsterHip" + rightSuffix;
                         break;
                     case "BackpackHolster":
                         pattern = "ReceiveShoulder" + leftSuffix;
                         break;
                     case "HeavyWeaponHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "SaigaHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "SVDHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "PPSHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "CrossbowHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "ObrezHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "MosinHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "FlamethrowerHolster":
+                        pattern = "ReceiveShoulder" + rightSuffix;
+                        break;
+                    case "EnergyRifleHolster":
                         pattern = "ReceiveShoulder" + rightSuffix;
                         break;
                     default:
